@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Tracker Pro - Sistema de Gestión de Estudios</title>
+    <meta name="description" content="Sistema profesional de gestión de tiempo de estudio con Pomodoro, Kanban, Notas y Analytics">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Chart.js para estadísticas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- SortableJS para drag & drop profesional -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+    <!-- Day.js para manejo de fechas -->
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/locale/es.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/relativeTime.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/calendar.js"></script>
+
+    <!-- Toastify para notificaciones -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-50 border-b border-gray-200">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
+                        <i class="fas fa-brain text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Study Tracker Pro</h1>
+                        <p class="text-xs text-gray-500">Sistema de Gestión de Estudios</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <div class="hidden md:flex items-center space-x-2 bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-2 rounded-lg border border-green-200">
+                        <i class="fas fa-fire text-orange-500"></i>
+                        <span class="text-sm font-semibold text-gray-700">Racha: <span id="headerStreak">0</span> días</span>
+                    </div>
+
+                    <button id="exportDataBtn" class="btn-outline-sm" title="Exportar datos">
+                        <i class="fas fa-download"></i>
+                    </button>
+
+                    <button id="settingsBtn" class="btn-outline-sm" title="Configuración">
+                        <i class="fas fa-cog"></i>
+                    </button>
+
+                    <div class="relative">
+                        <button id="profileBtn" class="flex items-center space-x-2 hover:bg-gray-100 px-3 py-2 rounded-lg transition-all">
+                            <div class="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-md" id="userAvatar">
+                                U
+                            </div>
+                            <div class="hidden sm:block text-left">
+                                <p class="text-sm font-semibold text-gray-900" id="userName">Usuario</p>
+                                <p class="text-xs text-gray-500" id="currentDateTime"></p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- Navigation Tabs -->
+        <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-2 mb-6 inline-flex flex-wrap gap-2 border border-gray-200">
+            <button class="tab-btn active" data-tab="dashboard">
+                <i class="fas fa-th-large"></i>
+                <span>Dashboard</span>
+            </button>
+            <button class="tab-btn" data-tab="pomodoro">
+                <i class="fas fa-clock"></i>
+                <span>Pomodoro</span>
+            </button>
+            <button class="tab-btn" data-tab="kanban">
+                <i class="fas fa-columns"></i>
+                <span>Kanban</span>
+            </button>
+            <button class="tab-btn" data-tab="habits">
+                <i class="fas fa-check-double"></i>
+                <span>Hábitos</span>
+            </button>
+            <button class="tab-btn" data-tab="notes">
+                <i class="fas fa-sticky-note"></i>
+                <span>Notas</span>
+            </button>
+            <button class="tab-btn" data-tab="analytics">
+                <i class="fas fa-chart-bar"></i>
+                <span>Analytics</span>
+            </button>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="tabContent">
+
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-content active">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <!-- Quick Stats -->
+                    <div class="stat-card bg-gradient-to-br from-blue-500 to-blue-600">
+                        <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                        <div>
+                            <p class="stat-label">Hoy</p>
+                            <p class="stat-value" id="todayMinutes">0</p>
+                            <p class="stat-unit">minutos</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card bg-gradient-to-br from-purple-500 to-purple-600">
+                        <div class="stat-icon"><i class="fas fa-fire"></i></div>
+                        <div>
+                            <p class="stat-label">Sesiones</p>
+                            <p class="stat-value" id="todaySessions">0</p>
+                            <p class="stat-unit">completadas</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card bg-gradient-to-br from-green-500 to-green-600">
+                        <div class="stat-icon"><i class="fas fa-tasks"></i></div>
+                        <div>
+                            <p class="stat-label">Tareas</p>
+                            <p class="stat-value" id="tasksCompleted">0</p>
+                            <p class="stat-unit">completadas</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Activity Timeline -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-history text-indigo-600"></i>
+                                Actividad Reciente
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="activityTimeline" class="space-y-3 max-h-96 overflow-y-auto">
+                                <div class="text-center text-gray-400 py-8">
+                                    <i class="fas fa-inbox text-4xl mb-2"></i>
+                                    <p>No hay actividad reciente</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-bolt text-yellow-600"></i>
+                                Acciones Rápidas
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="grid grid-cols-2 gap-3">
+                                <button class="quick-action-btn" data-action="pomodoro">
+                                    <i class="fas fa-play-circle text-3xl mb-2 text-indigo-600"></i>
+                                    <span>Iniciar Pomodoro</span>
+                                </button>
+                                <button class="quick-action-btn" data-action="task">
+                                    <i class="fas fa-plus-circle text-3xl mb-2 text-purple-600"></i>
+                                    <span>Nueva Tarea</span>
+                                </button>
+                                <button class="quick-action-btn" data-action="note">
+                                    <i class="fas fa-edit text-3xl mb-2 text-blue-600"></i>
+                                    <span>Nueva Nota</span>
+                                </button>
+                                <button class="quick-action-btn" data-action="habit">
+                                    <i class="fas fa-check-circle text-3xl mb-2 text-green-600"></i>
+                                    <span>Nuevo Hábito</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Tasks Preview -->
+                <div class="card mt-6">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-list-check text-orange-600"></i>
+                            Tareas Pendientes
+                        </h3>
+                        <button class="btn-text" onclick="switchTab('kanban')">Ver todas →</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="dashboardTasks" class="space-y-2">
+                            <div class="text-center text-gray-400 py-4">
+                                <i class="fas fa-clipboard-check text-3xl mb-2"></i>
+                                <p>No hay tareas pendientes</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pomodoro Tab -->
+            <div id="pomodoro" class="tab-content hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                    <!-- Timer Section -->
+                    <div class="lg:col-span-2">
+                        <div class="card">
+                            <div class="card-body p-8">
+
+                                <!-- Timer Modes -->
+                                <div class="flex flex-wrap gap-3 mb-8 justify-center">
+                                    <button class="timer-mode-btn active" data-mode="focus" data-duration="25">
+                                        <i class="fas fa-brain mr-2"></i>
+                                        Concentración (25min)
+                                    </button>
+                                    <button class="timer-mode-btn" data-mode="short" data-duration="5">
+                                        <i class="fas fa-coffee mr-2"></i>
+                                        Descanso Corto (5min)
+                                    </button>
+                                    <button class="timer-mode-btn" data-mode="long" data-duration="15">
+                                        <i class="fas fa-couch mr-2"></i>
+                                        Descanso Largo (15min)
+                                    </button>
+                                </div>
+
+                                <!-- Timer Display -->
+                                <div class="flex justify-center items-center mb-8">
+                                    <div class="timer-container">
+                                        <svg class="timer-ring" viewBox="0 0 300 300">
+                                            <defs>
+                                                <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                    <stop offset="0%" stop-color="#4F46E5"/>
+                                                    <stop offset="100%" stop-color="#7C3AED"/>
+                                                </linearGradient>
+                                            </defs>
+                                            <circle class="timer-ring-bg" cx="150" cy="150" r="140"/>
+                                            <circle class="timer-ring-progress" id="timerCircle" cx="150" cy="150" r="140"/>
+                                        </svg>
+                                        <div class="timer-display">
+                                            <div id="timerTime" class="timer-time">25:00</div>
+                                            <div id="timerLabel" class="timer-label">Listo para comenzar</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Task Input -->
+                                <div class="mb-6">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        ¿En qué estás trabajando?
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="sessionTask"
+                                        placeholder="Ej: Estudiar capítulo 5 de Física..."
+                                        class="input-field"
+                                    >
+                                </div>
+
+                                <!-- Timer Controls -->
+                                <div class="flex justify-center gap-4">
+                                    <button id="timerStart" class="btn-primary-lg">
+                                        <i class="fas fa-play mr-2"></i>Iniciar
+                                    </button>
+                                    <button id="timerPause" class="btn-warning-lg hidden">
+                                        <i class="fas fa-pause mr-2"></i>Pausar
+                                    </button>
+                                    <button id="timerReset" class="btn-outline-lg">
+                                        <i class="fas fa-redo mr-2"></i>Reiniciar
+                                    </button>
+                                    <button id="timerSkip" class="btn-outline-lg">
+                                        <i class="fas fa-forward mr-2"></i>Saltar
+                                    </button>
+                                </div>
+
+                                <!-- Session Progress -->
+                                <div class="mt-8 pt-6 border-t border-gray-200">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <span class="text-sm font-medium text-gray-600">Ciclos Pomodoro</span>
+                                        <span class="text-sm font-bold text-indigo-600" id="pomodoroCount">0/4</span>
+                                    </div>
+                                    <div class="flex gap-2" id="pomodoroCircles">
+                                        <div class="pomo-circle"></div>
+                                        <div class="pomo-circle"></div>
+                                        <div class="pomo-circle"></div>
+                                        <div class="pomo-circle"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Settings Panel -->
+                        <div class="card mt-6">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-sliders-h text-gray-600"></i>
+                                    Configuración del Timer
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            Concentración (min)
+                                        </label>
+                                        <input type="number" id="focusDuration" value="25" min="1" max="60" class="input-field text-center">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            Descanso Corto (min)
+                                        </label>
+                                        <input type="number" id="shortBreakDuration" value="5" min="1" max="30" class="input-field text-center">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            Descanso Largo (min)
+                                        </label>
+                                        <input type="number" id="longBreakDuration" value="15" min="1" max="60" class="input-field text-center">
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex items-center justify-between">
+                                    <label class="flex items-center space-x-2 cursor-pointer">
+                                        <input type="checkbox" id="autoStartBreak" class="checkbox">
+                                        <span class="text-sm text-gray-700">Auto-iniciar descansos</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 cursor-pointer">
+                                        <input type="checkbox" id="soundEnabled" class="checkbox" checked>
+                                        <span class="text-sm text-gray-700">Sonido de notificación</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Session History Sidebar -->
+                    <div class="lg:col-span-1">
+                        <div class="card sticky top-24">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-history text-blue-600"></i>
+                                    Historial Hoy
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-4 p-4 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl">
+                                    <div class="text-center">
+                                        <p class="text-sm text-gray-600 mb-1">Total hoy</p>
+                                        <p class="text-3xl font-bold text-indigo-600" id="todayTotal">0h 0m</p>
+                                    </div>
+                                </div>
+                                <div id="sessionHistory" class="space-y-3 max-h-96 overflow-y-auto">
+                                    <div class="text-center text-gray-400 py-8">
+                                        <i class="fas fa-clipboard-list text-3xl mb-2"></i>
+                                        <p class="text-sm">No hay sesiones hoy</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kanban Tab -->
+            <div id="kanban" class="tab-content hidden">
+                <div class="flex flex-wrap items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-1">Tablero Kanban</h2>
+                        <p class="text-sm text-gray-500">Arrastra las tarjetas para cambiar su estado</p>
+                    </div>
+                    <button id="addTaskBtn" class="btn-primary">
+                        <i class="fas fa-plus mr-2"></i>Nueva Tarea
+                    </button>
+                </div>
+
+                <div class="kanban-board">
+                    <!-- Backlog Column -->
+                    <div class="kanban-column">
+                        <div class="kanban-column-header bg-gray-500">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-inbox"></i>
+                                    <h3>Backlog</h3>
+                                </div>
+                                <span class="kanban-count" id="backlogCount">0</span>
+                            </div>
+                        </div>
+                        <div class="kanban-cards" id="backlog" data-status="backlog">
+                            <div class="empty-state">
+                                <i class="fas fa-inbox text-3xl mb-2 opacity-30"></i>
+                                <p>Sin tareas en backlog</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- To Do Column -->
+                    <div class="kanban-column">
+                        <div class="kanban-column-header bg-red-500">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-list"></i>
+                                    <h3>Por Hacer</h3>
+                                </div>
+                                <span class="kanban-count" id="todoCount">0</span>
+                            </div>
+                        </div>
+                        <div class="kanban-cards" id="todo" data-status="todo">
+                            <div class="empty-state">
+                                <i class="fas fa-list text-3xl mb-2 opacity-30"></i>
+                                <p>Sin tareas pendientes</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- In Progress Column -->
+                    <div class="kanban-column">
+                        <div class="kanban-column-header bg-yellow-500">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-spinner"></i>
+                                    <h3>En Progreso</h3>
+                                </div>
+                                <span class="kanban-count" id="inprogressCount">0</span>
+                            </div>
+                        </div>
+                        <div class="kanban-cards" id="inprogress" data-status="inprogress">
+                            <div class="empty-state">
+                                <i class="fas fa-spinner text-3xl mb-2 opacity-30"></i>
+                                <p>Sin tareas en progreso</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Done Column -->
+                    <div class="kanban-column">
+                        <div class="kanban-column-header bg-green-500">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-check"></i>
+                                    <h3>Completado</h3>
+                                </div>
+                                <span class="kanban-count" id="doneCount">0</span>
+                            </div>
+                        </div>
+                        <div class="kanban-cards" id="done" data-status="done">
+                            <div class="empty-state">
+                                <i class="fas fa-check text-3xl mb-2 opacity-30"></i>
+                                <p>Sin tareas completadas</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Habits Tab -->
+            <div id="habits" class="tab-content hidden">
+                <div class="flex flex-wrap items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-1">Mis Hábitos</h2>
+                        <p class="text-sm text-gray-500">Construye rutinas consistentes día a día</p>
+                    </div>
+                    <button id="addHabitBtn" class="btn-primary">
+                        <i class="fas fa-plus mr-2"></i>Nuevo Hábito
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2">
+                        <div class="card">
+                            <div class="card-body">
+                                <div id="habitsList" class="space-y-4">
+                                    <div class="text-center text-gray-400 py-12">
+                                        <i class="fas fa-seedling text-5xl mb-3"></i>
+                                        <p class="text-lg mb-2">No tienes hábitos creados</p>
+                                        <p class="text-sm">Crea tu primer hábito para comenzar a construir tu rutina</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-1">
+                        <div class="card mb-6">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-calendar-check text-green-600"></i>
+                                    Racha Actual
+                                </h3>
+                            </div>
+                            <div class="card-body text-center">
+                                <div class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-orange-400 to-red-500 rounded-full mb-4 shadow-lg">
+                                    <div class="text-center text-white">
+                                        <div class="text-3xl font-bold" id="currentStreak">0</div>
+                                        <div class="text-xs">días</div>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-600">Racha más larga: <span class="font-bold" id="longestStreak">0</span> días</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-chart-pie text-blue-600"></i>
+                                    Progreso Hoy
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="relative pt-1">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-sm font-semibold text-gray-700">Completados</span>
+                                        <span class="text-sm font-bold text-indigo-600" id="habitProgress">0/0</span>
+                                    </div>
+                                    <div class="overflow-hidden h-4 text-xs flex rounded-full bg-gray-200">
+                                        <div id="habitProgressBar" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-500" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes Tab -->
+            <div id="notes" class="tab-content hidden">
+                <div class="flex flex-wrap items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-1">Mis Notas</h2>
+                        <p class="text-sm text-gray-500">Organiza tus ideas y apuntes</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <select id="notesFilter" class="input-field-sm">
+                            <option value="all">Todas las categorías</option>
+                            <option value="general">General</option>
+                            <option value="clase">Clase</option>
+                            <option value="proyecto">Proyecto</option>
+                            <option value="examen">Examen</option>
+                            <option value="idea">Idea</option>
+                        </select>
+                        <button id="addNoteBtn" class="btn-primary">
+                            <i class="fas fa-plus mr-2"></i>Nueva Nota
+                        </button>
+                    </div>
+                </div>
+
+                <div id="notesGrid" class="notes-grid">
+                    <div class="col-span-full text-center text-gray-400 py-12">
+                        <i class="fas fa-book-open text-5xl mb-3"></i>
+                        <p class="text-lg mb-2">No tienes notas guardadas</p>
+                        <p class="text-sm">Crea tu primera nota para comenzar</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div id="analytics" class="tab-content hidden">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Análisis y Estadísticas</h2>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <div class="stat-card-alt bg-blue-500">
+                        <i class="fas fa-clock text-4xl mb-3"></i>
+                        <p class="text-sm opacity-90 mb-1">Total Estudiado</p>
+                        <p class="text-3xl font-bold" id="totalStudyTime">0h</p>
+                    </div>
+                    <div class="stat-card-alt bg-purple-500">
+                        <i class="fas fa-fire text-4xl mb-3"></i>
+                        <p class="text-sm opacity-90 mb-1">Sesiones</p>
+                        <p class="text-3xl font-bold" id="totalSessions">0</p>
+                    </div>
+                    <div class="stat-card-alt bg-green-500">
+                        <i class="fas fa-check-double text-4xl mb-3"></i>
+                        <p class="text-sm opacity-90 mb-1">Hábitos Activos</p>
+                        <p class="text-3xl font-bold" id="activeHabits">0</p>
+                    </div>
+                    <div class="stat-card-alt bg-orange-500">
+                        <i class="fas fa-trophy text-4xl mb-3"></i>
+                        <p class="text-sm opacity-90 mb-1">Productividad</p>
+                        <p class="text-3xl font-bold" id="productivityScore">0%</p>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-line text-blue-600"></i>
+                                Tiempo de Estudio (7 días)
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="weeklyChart" height="250"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-pie text-purple-600"></i>
+                                Distribución por Categoría
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="categoryChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-calendar-alt text-green-600"></i>
+                            Heatmap de Actividad (Últimos 90 días)
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="heatmapContainer" class="overflow-x-auto">
+                            <!-- Heatmap will be generated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modals -->
+
+    <!-- Task Modal -->
+    <div id="taskModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-tasks text-indigo-600"></i>
+                    <span id="taskModalTitle">Nueva Tarea</span>
+                </h3>
+                <button class="modal-close" data-modal="taskModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="taskForm">
+                <div class="modal-body">
+                    <input type="hidden" id="taskId">
+
+                    <div class="form-group">
+                        <label class="form-label">Título *</label>
+                        <input type="text" id="taskTitle" class="input-field" placeholder="Ej: Terminar proyecto de matemáticas" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Descripción</label>
+                        <textarea id="taskDescription" class="input-field" rows="3" placeholder="Detalles adicionales..."></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label class="form-label">Prioridad *</label>
+                            <select id="taskPriority" class="input-field" required>
+                                <option value="low">Baja</option>
+                                <option value="medium" selected>Media</option>
+                                <option value="high">Alta</option>
+                                <option value="urgent">Urgente</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Estado *</label>
+                            <select id="taskStatus" class="input-field" required>
+                                <option value="backlog">Backlog</option>
+                                <option value="todo" selected>Por Hacer</option>
+                                <option value="inprogress">En Progreso</option>
+                                <option value="done">Completado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label class="form-label">Fecha límite</label>
+                            <input type="date" id="taskDueDate" class="input-field">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Categoría</label>
+                            <select id="taskCategory" class="input-field">
+                                <option value="estudio">Estudio</option>
+                                <option value="proyecto">Proyecto</option>
+                                <option value="examen">Examen</option>
+                                <option value="tarea">Tarea</option>
+                                <option value="lectura">Lectura</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Etiquetas (separadas por coma)</label>
+                        <input type="text" id="taskTags" class="input-field" placeholder="Ej: urgente, matemáticas, proyecto">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline" data-modal="taskModal">Cancelar</button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save mr-2"></i>Guardar Tarea
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Habit Modal -->
+    <div id="habitModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-leaf text-green-600"></i>
+                    <span id="habitModalTitle">Nuevo Hábito</span>
+                </h3>
+                <button class="modal-close" data-modal="habitModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="habitForm">
+                <div class="modal-body">
+                    <input type="hidden" id="habitId">
+
+                    <div class="form-group">
+                        <label class="form-label">Nombre del hábito *</label>
+                        <input type="text" id="habitName" class="input-field" placeholder="Ej: Estudiar 2 horas diarias" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Descripción</label>
+                        <textarea id="habitDescription" class="input-field" rows="2" placeholder="¿Por qué es importante este hábito?"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label class="form-label">Categoría *</label>
+                            <select id="habitCategory" class="input-field" required>
+                                <option value="estudio">Estudio</option>
+                                <option value="ejercicio">Ejercicio</option>
+                                <option value="lectura">Lectura</option>
+                                <option value="meditacion">Meditación</option>
+                                <option value="salud">Salud</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Icono</label>
+                            <select id="habitIcon" class="input-field">
+                                <option value="fa-book">📚 Libro</option>
+                                <option value="fa-dumbbell">💪 Ejercicio</option>
+                                <option value="fa-brain">🧠 Mental</option>
+                                <option value="fa-heart">❤️ Salud</option>
+                                <option value="fa-code">💻 Programación</option>
+                                <option value="fa-pencil">✏️ Escritura</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Meta diaria</label>
+                        <input type="text" id="habitGoal" class="input-field" placeholder="Ej: 2 horas, 10 páginas, 30 minutos">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline" data-modal="habitModal">Cancelar</button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save mr-2"></i>Guardar Hábito
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Note Modal -->
+    <div id="noteModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-sticky-note text-yellow-600"></i>
+                    <span id="noteModalTitle">Nueva Nota</span>
+                </h3>
+                <button class="modal-close" data-modal="noteModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="noteForm">
+                <div class="modal-body">
+                    <input type="hidden" id="noteId">
+
+                    <div class="form-group">
+                        <label class="form-label">Título *</label>
+                        <input type="text" id="noteTitle" class="input-field" placeholder="Título de la nota" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Contenido *</label>
+                        <textarea id="noteContent" class="input-field" rows="10" placeholder="Escribe tu nota aquí..." required></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label class="form-label">Categoría *</label>
+                            <select id="noteCategory" class="input-field" required>
+                                <option value="general">General</option>
+                                <option value="clase">Clase</option>
+                                <option value="proyecto">Proyecto</option>
+                                <option value="examen">Examen</option>
+                                <option value="idea">Idea</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Color</label>
+                            <select id="noteColor" class="input-field">
+                                <option value="#FEF3C7">Amarillo</option>
+                                <option value="#DBEAFE">Azul</option>
+                                <option value="#D1FAE5">Verde</option>
+                                <option value="#FCE7F3">Rosa</option>
+                                <option value="#E0E7FF">Morado</option>
+                                <option value="#FED7AA">Naranja</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Etiquetas (separadas por coma)</label>
+                        <input type="text" id="noteTags" class="input-field" placeholder="Ej: importante, examen, revisar">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline" data-modal="noteModal">Cancelar</button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save mr-2"></i>Guardar Nota
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-cog text-gray-600"></i>
+                    Configuración
+                </h3>
+                <button class="modal-close" data-modal="settingsModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Nombre de Usuario</label>
+                    <input type="text" id="settingsUserName" class="input-field" placeholder="Tu nombre">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Tema</label>
+                    <select id="settingsTheme" class="input-field">
+                        <option value="light">Claro</option>
+                        <option value="dark">Oscuro</option>
+                        <option value="auto">Automático</option>
+                    </select>
+                </div>
+
+                <div class="border-t pt-4 mt-4">
+                    <h4 class="font-semibold text-gray-900 mb-3">Gestión de Datos</h4>
+                    <div class="space-y-2">
+                        <button type="button" id="exportBtn" class="btn-outline w-full justify-center">
+                            <i class="fas fa-download mr-2"></i>Exportar Datos (JSON)
+                        </button>
+                        <button type="button" id="importBtn" class="btn-outline w-full justify-center">
+                            <i class="fas fa-upload mr-2"></i>Importar Datos
+                        </button>
+                        <input type="file" id="importFile" accept=".json" class="hidden">
+                        <button type="button" id="clearDataBtn" class="btn-danger w-full justify-center">
+                            <i class="fas fa-trash mr-2"></i>Borrar Todos los Datos
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-primary w-full" data-modal="settingsModal">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>
